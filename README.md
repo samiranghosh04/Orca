@@ -79,15 +79,22 @@ To run Orca locally, follow these steps:
 
 2. Install dependencies:
    
+   In seperate terminals run the following sets of commands -
    ```
-        cd orca
+        cd frontend
+        npm install
+   ```
+   The set of commands above is for client and the set below is for backend
+   ```
+        cd backend
         npm install
    ```
 
-3. Set up environment variables:
+
+4. Set up environment variables:
    - Create a `.env` file based on the provided `.env.example` template.
 
-4. Start the development server:
+5. Start the development server:
    
    ```
         npm run dev
