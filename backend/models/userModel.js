@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import validator from 'validator';
 
 const userSchema = mongoose.Schema({
     name: {
@@ -15,6 +16,12 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        validate: {
+            validator: (value) => {
+                return validator.isEmail(value);
+            },
+            message: 'Invalid email format',
+        },
     },
     password: {
         type: String,
@@ -41,6 +48,7 @@ const userSchema = mongoose.Schema({
         type: String,
         default: "",
         enum: [
+            "",
             "he/him/his",
             "she/her/hers",
             "they/them/theirs",
@@ -52,6 +60,38 @@ const userSchema = mongoose.Schema({
             "e/em/es",
             "others",
         ],
+    },
+    versionControlProfile: {
+        type: String,
+        default: "",
+        validate: {
+            validator: (value) => {
+                return !value || validator.isURL(value, { protocols: ['http', 'https'], require_protocol: true });
+            },
+            message: 'Invalid URL for versionControlProfile',
+        },
+    },
+    website: {
+        type: String,
+        default: "",
+        validate: {
+            validator: (value) => {
+                return !value || validator.isURL(value, { protocols: ['http', 'https'], require_protocol: true });
+            },
+            message: 'Invalid URL for website',
+        },
+    },
+    blockedUsers: { 
+        type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        default: [] // By default nobody should be blocked
+    },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    isBanned: {
+        type: Boolean,
+        default: false,
     }
 },
 {
