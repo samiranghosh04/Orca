@@ -89,4 +89,77 @@ const likeUnlikePost = async (req, res) => {
 	}
 };
 
-export { createPost, getPost, deletePost, likeUnlikePost };
+// REPLY
+const replyToPost = async (req, res) => {
+	try {
+		const { text } = req.body;
+		const postId = req.params.id;
+		const userId = req.user._id;
+		const userProfilePicture = req.user.profilePicture;
+		const username = req.user.username;
+
+		if(!text){
+			return res.status(400).json({ message : "Text field is required"});
+		}
+
+		const post = await Post.findById(postId);
+		if(!post){
+			return res.status(400).json({ message : "Post not found!"});
+		}
+
+		const reply = {userId, text, userProfilePicture, username};
+
+		post.replies.push(reply);
+		await post.save();
+
+		return res.status(200).json({ message: "Reply added successfully!", post });
+
+	} catch (err) {
+		return res.status(500).json({ message: err.message });
+	}
+};
+
+// Feed
+/*
+const getFeedPosts = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		const following = user.following;
+
+		const feedPosts = await Post.find({ postedBy: { $in: following } }).sort({ createdAt: -1 });
+
+		res.status(200).json(feedPosts);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+};*/
+const getFeedPosts = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const following = user.following;
+
+        // Fetch posts based on the users the current user follows and the user's interactions
+        const feedPosts = await Post.find({
+            $or: [
+                { postedBy: { $in: following } }, // Posts by users the current user is following
+                { likes: { $in: [userId] } } // Posts that the user has liked
+            ]
+        }).sort({ createdAt: -1 });
+
+        res.status(200).json(feedPosts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export { createPost, getPost, deletePost, likeUnlikePost, replyToPost,  getFeedPosts };

@@ -40,6 +40,10 @@ const userSchema = mongoose.Schema({
         type: [String],
         default: [],
     },
+    likedPosts: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Post' 
+    }],
     bio: {
         type: String,
         maxlength: 360,
