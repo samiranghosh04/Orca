@@ -66,28 +66,40 @@ const deletePost = async (req, res) => {
 // LIKE AND UNLIKE POST
 const likeUnlikePost = async (req, res) => {
 	try {
-		const {id:postId} = req.params;
+		const { id: postId } = req.params;
 		const userId = req.user._id;
+
+		// Find the post
 		const post = await Post.findById(postId);
 		if (!post) {
 			return res.status(404).json({ message: "Post not found" });
 		}
+
+		// Check if the user has already liked the post
 		const userLikedPost = post.likes.includes(userId);
-		if(userLikedPost){
-			//unlike post
-			await Post.updateOne({_id: postId}, {$pull: {likes: userId}});
-			res.status(200).json({message: "Post unliked succesfully!"});
-		}else{
-			//like post
+		if (userLikedPost) {
+			// Unlike post
+			await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+
+			// Remove the post from the user's likedPosts array
+			await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
+
+			res.status(200).json({ message: "Post unliked successfully!" });
+		} else {
+			// Like post
 			post.likes.push(userId);
 			await post.save();
-			res.status(200).json({message: "Post liked succesfully!"});
-		}
 
+			// Add the post to the user's likedPosts array
+			await User.updateOne({ _id: userId }, { $addToSet: { likedPosts: postId } });
+
+			res.status(200).json({ message: "Post liked successfully!" });
+		}
 	} catch (err) {
 		return res.status(500).json({ message: err.message });
 	}
 };
+
 
 // REPLY
 const replyToPost = async (req, res) => {
@@ -138,27 +150,28 @@ const getFeedPosts = async (req, res) => {
 		res.status(500).json({ error: err.message });
 	}
 };*/
+
 const getFeedPosts = async (req, res) => {
     try {
         const userId = req.user._id;
+        // Find the authenticated user
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-
-        const following = user.following;
-
+        // Convert string IDs to ObjectId
+        const following = user.following.map(id => mongoose.Types.ObjectId(id));
         // Fetch posts based on the users the current user follows and the user's interactions
         const feedPosts = await Post.find({
             $or: [
                 { postedBy: { $in: following } }, // Posts by users the current user is following
-                { likes: { $in: [userId] } } // Posts that the user has liked
+                { likes: userId } // Posts that the user has liked
             ]
-        }).sort({ createdAt: -1 });
-
+        }).sort({ createdAt: -1 }).populate('postedBy', 'name username profilePicture');
         res.status(200).json(feedPosts);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error(err); // Log the error for debugging
+        res.status(500).json({ error: "Internal server error" });
     }
 };
 
